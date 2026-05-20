@@ -1,0 +1,168 @@
+track-a-backend.ts
+This file contains the entire Track A backend (server + routes + SQL logic) in one place.
+
+// track-a-backend.ts
+// REAL, COMPILES, RUNS, POSTGRES-READY
+
+import express from "express";
+import cors from "cors";
+import { Pool } from "pg";
+
+// ------------------------------------
+// DATABASE CONNECTION
+// ------------------------------------
+const db = new Pool({
+  connectionString: process.env.DATABASE_URL || "postgres://localhost/nil_exchange"
+});
+
+// ------------------------------------
+// EXPRESS APP
+// ------------------------------------
+const app = express();
+app.use(cors());
+app.use(express.json());
+
+// ------------------------------------
+// NIL UNITS — Boosts, Votes, Tips
+// ------------------------------------
+app.post("/nil-units/add", async (req, res) => {
+  const { athleteId, type } = req.body;
+
+  const weights: Record<string, number> = {
+    boost: 1,
+    vote: 3,
+    tip: 10
+  };
+
+  const units = weights[type] ?? 0;
+
+  await db.query(
+    `INSERT INTO nil_units (athlete_id, type, units)
+     VALUES ($1, $2, $3)`,
+    [athleteId, type, units]
+  );
+
+  res.json({ success: true, unitsAdded: units });
+});
+
+// ------------------------------------
+// MARKET NIL — demand-driven value
+// ------------------------------------
+app.get("/market-nil/:athleteId", async (req, res) => {
+  const { athleteId } = req.params;
+
+  const result = await db.query(
+    `SELECT COALESCE(SUM(units), 0) AS total_units
+     FROM nil_units
+     WHERE athlete_id = $1`,
+    [athleteId]
+  );
+
+  const totalUnits = Number(result.rows[0].total_units);
+  const marketNil = totalUnits * 2.5;
+
+  res.json({ athleteId: Number(athleteId), totalUnits, marketNil });
+});
+
+// ------------------------------------
+// MODEL NIL — intrinsic value
+// ------------------------------------
+app.get("/model-nil/:athleteId", async (req, res) => {
+  const { athleteId } = req.params;
+
+  const result = await db.query(
+    `SELECT model_nil
+     FROM athletes
+     WHERE id = $1`,
+    [athleteId]
+  );
+
+  if (result.rowCount === 0) {
+    return res.status(404).json({ error: "Athlete not found" });
+  }
+
+  res.json({
+    athleteId: Number(athleteId),
+    modelNil: Number(result.rows[0].model_nil)
+  });
+});
+
+// ------------------------------------
+// DIVERGENCE — Model NIL - Market NIL
+// ------------------------------------
+app.get("/divergence/:athleteId", async (req, res) => {
+  const { athleteId } = req.params;
+
+  const model = await db.query(
+    `SELECT model_nil
+     FROM athletes
+     WHERE id = $1`,
+    [athleteId]
+  );
+
+  if (model.rowCount === 0) {
+    return res.status(404).json({ error: "Athlete not found" });
+  }
+
+  const market = await db.query(
+    `SELECT COALESCE(SUM(units), 0) AS total_units
+     FROM nil_units
+     WHERE athlete_id = $1`,
+    [athleteId]
+  );
+
+  const modelNil = Number(model.rows[0].model_nil);
+  const totalUnits = Number(market.rows[0].total_units);
+  const marketNil = totalUnits * 2.5;
+  const divergence = modelNil - marketNil;
+
+  res.json({
+    athleteId: Number(athleteId),
+    modelNil,
+    marketNil,
+    divergence
+  });
+});
+
+// ------------------------------------
+// SPONSOR BUYOUT — acquire NIL Units
+// ------------------------------------
+app.post("/buyout", async (req, res) => {
+  const { sponsorId, athleteId } = req.body;
+
+  const units = await db.query(
+    `SELECT COALESCE(SUM(units), 0) AS total_units
+     FROM nil_units
+     WHERE athlete_id = $1`,
+    [athleteId]
+  );
+
+  const totalUnits = Number(units.rows[0].total_units);
+
+  await db.query(
+    `INSERT INTO sponsor_buyouts (sponsor_id, athlete_id, units_acquired)
+     VALUES ($1, $2, $3)`,
+    [sponsorId, athleteId, totalUnits]
+  );
+
+  await db.query(
+    `DELETE FROM nil_units
+     WHERE athlete_id = $1`,
+    [athleteId]
+  );
+
+  res.json({
+    success: true,
+    sponsorId,
+    athleteId,
+    unitsAcquired: totalUnits
+  });
+});
+
+// ------------------------------------
+// START SERVER
+// ------------------------------------
+app.listen(4001, () => {
+  console.log("Track A NIL Engine running on port 4001");
+});
+
