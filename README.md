@@ -1,0 +1,2 @@
+# institutional-grade-nil-valuation-reporting-and-exchange
+Institutional Grade NIL Valuation &amp; Exchange: a dual‑track system unifying amateur and professional NIL economics. Track A delivers college‑level modeling, market demand, NIL Units, divergence, sponsor buyouts, and CPM/CPI settlement. Track B adds pro‑grade swaps, cohort baskets, and exposure management for leagues, clubs, and agencies.
