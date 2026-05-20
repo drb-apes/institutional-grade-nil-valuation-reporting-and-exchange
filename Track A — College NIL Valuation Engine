@@ -1,7 +1,3 @@
-Track A — College NIL Valuation Engine
-track-a-backend.ts
-This file contains the entire Track A backend (server + routes + SQL logic) in one place.
-
 // track-a-backend.ts
 // REAL, COMPILES, RUNS, POSTGRES-READY
 
