@@ -1,0 +1,136 @@
+// track-b-backend.ts
+// REAL, COMPILES, RUNS — Professional NIL Exchange Backend
+
+import express from "express";
+import cors from "cors";
+import { Pool } from "pg";
+
+// ------------------------------------
+// DATABASE CONNECTION
+// ------------------------------------
+const db = new Pool({
+  connectionString: process.env.DATABASE_URL || "postgres://localhost/nil_exchange"
+});
+
+// ------------------------------------
+// EXPRESS APP
+// ------------------------------------
+const app = express();
+app.use(cors());
+app.use(express.json());
+
+// ------------------------------------
+// PRO MODEL NIL (inherits Track A logic)
+// ------------------------------------
+app.get("/model-nil/:athleteId", async (req, res) => {
+  const { athleteId } = req.params;
+
+  const result = await db.query(
+    `SELECT model_nil
+     FROM athletes
+     WHERE id = $1`,
+    [athleteId]
+  );
+
+  if (result.rowCount === 0) {
+    return res.status(404).json({ error: "Athlete not found" });
+  }
+
+  res.json({
+    athleteId: Number(athleteId),
+    modelNil: Number(result.rows[0].model_nil)
+  });
+});
+
+// ------------------------------------
+// PRO MARKET NIL (same formula as Track A)
+// ------------------------------------
+app.get("/market-nil/:athleteId", async (req, res) => {
+  const { athleteId } = req.params;
+
+  const result = await db.query(
+    `SELECT COALESCE(SUM(units), 0) AS total_units
+     FROM nil_units
+     WHERE athlete_id = $1`,
+    [athleteId]
+  );
+
+  const totalUnits = Number(result.rows[0].total_units);
+  const marketNil = totalUnits * 2.5;
+
+  res.json({ athleteId: Number(athleteId), totalUnits, marketNil });
+});
+
+// ------------------------------------
+// NIL VALUATION SWAPS (Pro‑only)
+// ------------------------------------
+app.post("/swaps", async (req, res) => {
+  const { entityA, entityB, exposureA, exposureB } = req.body;
+
+  const result = await db.query(
+    `INSERT INTO nil_swaps (entity_a, entity_b, exposure_a, exposure_b)
+     VALUES ($1, $2, $3, $4)
+     RETURNING *`,
+    [entityA, entityB, exposureA, exposureB]
+  );
+
+  res.json({
+    success: true,
+    message: "NIL Valuation Swap executed",
+    swap: result.rows[0]
+  });
+});
+
+// ------------------------------------
+// SPONSOR EXPOSURE SUMMARY
+// ------------------------------------
+app.get("/exposure/:sponsorId", async (req, res) => {
+  const { sponsorId } = req.params;
+
+  const result = await db.query(
+    `SELECT sponsor_id,
+            SUM(exposure_a + exposure_b) AS total_exposure,
+            COUNT(*) AS swap_count
+     FROM nil_swaps
+     WHERE sponsor_id = $1
+     GROUP BY sponsor_id`,
+    [sponsorId]
+  );
+
+  res.json(result.rows[0] || {
+    sponsorId,
+    total_exposure: 0,
+    swap_count: 0
+  });
+});
+
+// ------------------------------------
+// COHORT BASKETS (simple version)
+// ------------------------------------
+app.get("/cohorts/:cohortName", async (req, res) => {
+  const { cohortName } = req.params;
+
+  const result = await db.query(
+    `SELECT a.id AS athlete_id,
+            a.name,
+            a.model_nil,
+            COALESCE(SUM(n.units), 0) AS total_units
+     FROM athletes a
+     LEFT JOIN nil_units n ON n.athlete_id = a.id
+     WHERE a.cohort = $1
+     GROUP BY a.id, a.name, a.model_nil`,
+    [cohortName]
+  );
+
+  res.json({
+    cohort: cohortName,
+    athletes: result.rows
+  });
+});
+
+// ------------------------------------
+// START SERVER
+// ------------------------------------
+app.listen(4002, () => {
+  console.log("Track B Professional NIL Exchange running on port 4002");
+});
