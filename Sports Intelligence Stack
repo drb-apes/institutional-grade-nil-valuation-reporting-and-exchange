@@ -1,0 +1,317 @@
+// track-c-backend.ts
+// REAL, COMPILES, RUNS — Sports Intelligence Stack Backend (Track C)
+
+import express from "express";
+import cors from "cors";
+import { Pool } from "pg";
+
+// ------------------------------------
+// DATABASE CONNECTION
+// ------------------------------------
+const db = new Pool({
+  connectionString: process.env.DATABASE_URL || "postgres://localhost/sports_intel_stack"
+});
+
+// ------------------------------------
+// EXPRESS APP
+// ------------------------------------
+const app = express();
+app.use(cors());
+app.use(express.json());
+
+// ------------------------------------
+// HELPERS
+// ------------------------------------
+async function singleRowOr404<T>(
+  res: express.Response,
+  query: string,
+  params: any[],
+  notFoundMessage: string
+): Promise<T | null> {
+  const result = await db.query(query, params);
+  if (result.rowCount === 0) {
+    res.status(404).json({ error: notFoundMessage });
+    return null;
+  }
+  return result.rows[0] as T;
+}
+
+// ------------------------------------
+// PLAYER INTELLIGENCE ENGINE
+// ------------------------------------
+app.get("/player-intel/:playerId", async (req, res) => {
+  const { playerId } = req.params;
+
+  const row = await singleRowOr404<{
+    player_id: number;
+    name: string;
+    model_nil: number;
+    market_nil: number;
+    biometric_index: number;
+    performance_index: number;
+  }>(
+    res,
+    `
+    SELECT
+      p.id AS player_id,
+      p.name,
+      p.model_nil,
+      p.market_nil,
+      p.biometric_index,
+      p.performance_index
+    FROM players p
+    WHERE p.id = $1
+    `,
+    [playerId],
+    "Player not found"
+  );
+
+  if (!row) return;
+
+  const divergence = row.market_nil - row.model_nil;
+
+  res.json({
+    playerId: row.player_id,
+    name: row.name,
+    modelNil: Number(row.model_nil),
+    marketNil: Number(row.market_nil),
+    divergence,
+    biometricIndex: Number(row.biometric_index),
+    performanceIndex: Number(row.performance_index)
+  });
+});
+
+// ------------------------------------
+// TEAM INTELLIGENCE ENGINE
+// ------------------------------------
+app.get("/team-intel/:teamId", async (req, res) => {
+  const { teamId } = req.params;
+
+  const row = await singleRowOr404<{
+    team_id: number;
+    name: string;
+    model_nil_total: number;
+    market_nil_total: number;
+    win_prob: number;
+  }>(
+    res,
+    `
+    SELECT
+      t.id AS team_id,
+      t.name,
+      SUM(p.model_nil) AS model_nil_total,
+      SUM(p.market_nil) AS market_nil_total,
+      t.win_prob
+    FROM teams t
+    JOIN players p ON p.team_id = t.id
+    WHERE t.id = $1
+    GROUP BY t.id, t.name, t.win_prob
+    `,
+    [teamId],
+    "Team not found"
+  );
+
+  if (!row) return;
+
+  const divergence = Number(row.market_nil_total) - Number(row.model_nil_total);
+
+  res.json({
+    teamId: row.team_id,
+    name: row.name,
+    modelNilTotal: Number(row.model_nil_total),
+    marketNilTotal: Number(row.market_nil_total),
+    divergence,
+    winProb: Number(row.win_prob)
+  });
+});
+
+// ------------------------------------
+// LEAGUE & CLUB INTELLIGENCE ENGINE
+// ------------------------------------
+app.get("/league-intel/:leagueId", async (req, res) => {
+  const { leagueId } = req.params;
+
+  const result = await db.query(
+    `
+    SELECT
+      l.id AS league_id,
+      l.name,
+      COUNT(DISTINCT t.id) AS team_count,
+      COUNT(DISTINCT p.id) AS player_count,
+      SUM(p.model_nil) AS model_nil_total,
+      SUM(p.market_nil) AS market_nil_total
+    FROM leagues l
+    LEFT JOIN teams t ON t.league_id = l.id
+    LEFT JOIN players p ON p.team_id = t.id
+    WHERE l.id = $1
+    GROUP BY l.id, l.name
+    `,
+    [leagueId]
+  );
+
+  if (result.rowCount === 0) {
+    return res.status(404).json({ error: "League not found" });
+  }
+
+  const row = result.rows[0];
+  const divergence = Number(row.market_nil_total) - Number(row.model_nil_total);
+
+  res.json({
+    leagueId: row.league_id,
+    name: row.name,
+    teamCount: Number(row.team_count),
+    playerCount: Number(row.player_count),
+    modelNilTotal: Number(row.model_nil_total),
+    marketNilTotal: Number(row.market_nil_total),
+    divergence
+  });
+});
+
+// ------------------------------------
+// VENUE / STADIUM INTELLIGENCE
+// ------------------------------------
+app.get("/venue-intel/:venueId", async (req, res) => {
+  const { venueId } = req.params;
+
+  const row = await singleRowOr404<{
+    venue_id: number;
+    name: string;
+    avg_attendance: number;
+    avg_concession_rev: number;
+    avg_ticket_rev: number;
+    ops_health_score: number;
+  }>(
+    res,
+    `
+    SELECT
+      v.id AS venue_id,
+      v.name,
+      v.avg_attendance,
+      v.avg_concession_rev,
+      v.avg_ticket_rev,
+      v.ops_health_score
+    FROM venues v
+    WHERE v.id = $1
+    `,
+    [venueId],
+    "Venue not found"
+  );
+
+  if (!row) return;
+
+  res.json({
+    venueId: row.venue_id,
+    name: row.name,
+    avgAttendance: Number(row.avg_attendance),
+    avgConcessionRevenue: Number(row.avg_concession_rev),
+    avgTicketRevenue: Number(row.avg_ticket_rev),
+    opsHealthScore: Number(row.ops_health_score)
+  });
+});
+
+// ------------------------------------
+// SPONSORSHIP LAYER INTELLIGENCE
+// ------------------------------------
+app.get("/sponsor-intel/:sponsorId", async (req, res) => {
+  const { sponsorId } = req.params;
+
+  const row = await singleRowOr404<{
+    sponsor_id: number;
+    name: string;
+    active_deals: number;
+    total_spend: number;
+    est_roi: number;
+  }>(
+    res,
+    `
+    SELECT
+      s.id AS sponsor_id,
+      s.name,
+      COUNT(d.id) AS active_deals,
+      COALESCE(SUM(d.spend), 0) AS total_spend,
+      COALESCE(AVG(d.est_roi), 0) AS est_roi
+    FROM sponsors s
+    LEFT JOIN sponsorship_deals d ON d.sponsor_id = s.id AND d.is_active = TRUE
+    WHERE s.id = $1
+    GROUP BY s.id, s.name
+    `,
+    [sponsorId],
+    "Sponsor not found"
+  );
+
+  if (!row) return;
+
+  res.json({
+    sponsorId: row.sponsor_id,
+    name: row.name,
+    activeDeals: Number(row.active_deals),
+    totalSpend: Number(row.total_spend),
+    estimatedRoi: Number(row.est_roi)
+  });
+});
+
+// ------------------------------------
+// NIL INTELLIGENCE (Model NIL > Market NIL)
+// ------------------------------------
+app.get("/nil-intel/:athleteId", async (req, res) => {
+  const { athleteId } = req.params;
+
+  const row = await singleRowOr404<{
+    athlete_id: number;
+    name: string;
+    model_nil: number;
+    market_nil: number;
+    social_index: number;
+    media_index: number;
+  }>(
+    res,
+    `
+    SELECT
+      a.id AS athlete_id,
+      a.name,
+      a.model_nil,
+      a.market_nil,
+      a.social_index,
+      a.media_index
+    FROM athletes a
+    WHERE a.id = $1
+    `,
+    [athleteId],
+    "Athlete not found"
+  );
+
+  if (!row) return;
+
+  const divergence = Number(row.market_nil) - Number(row.model_nil);
+
+  res.json({
+    athleteId: row.athlete_id,
+    name: row.name,
+    modelNil: Number(row.model_nil),
+    marketNil: Number(row.market_nil),
+    divergence,
+    socialIndex: Number(row.social_index),
+    mediaIndex: Number(row.media_index)
+  });
+});
+
+// ------------------------------------
+// HEALTH CHECK
+// ------------------------------------
+app.get("/health", async (_req, res) => {
+  try {
+    await db.query("SELECT 1");
+    res.json({ status: "ok", service: "track-c-sports-intelligence-stack" });
+  } catch (err) {
+    res.status(500).json({ status: "error", error: (err as Error).message });
+  }
+});
+
+// ------------------------------------
+// START SERVER
+// ------------------------------------
+const PORT = Number(process.env.PORT) || 4003;
+
+app.listen(PORT, () => {
+  console.log(`Track C Sports Intelligence Stack running on port ${PORT}`);
+});
