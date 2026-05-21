@@ -1,0 +1,137 @@
+ src/api/biomechflowCapsules.route.ts
+import express, { Request, Response } from "express";
+import { BiomechFlowEngine } from "../biomechflow/biomechflow-engine";
+import { Metric } from "../ingestion/metric.types";
+import { metricRepository } from "../data/metric-repository";
+
+const router = express.Router();
+
+// GET /api/athletes/:athleteId/biomechflow/capsules
+router.get(
+  "/athletes/:athleteId/biomechflow/capsules",
+  async (req: Request, res: Response) => {
+    try {
+      const athleteId = req.params.athleteId;
+
+      // 1. Load recent metrics (e.g., last 24h or last session)
+      const metrics: Metric[] = await metricRepository.getRecentMetricsForAthlete(
+        athleteId,
+        {
+          hours: 24,
+        }
+      );
+
+      if (!metrics || metrics.length === 0) {
+        return res.status(200).json({
+          athleteId,
+          nodes: {
+            vital: 500,
+            cognitive: 500,
+            performance: 500,
+            overall: 500,
+          },
+          hasData: false,
+        });
+      }
+
+      // 2. Instantiate BiomechFlow engine (optionally pass baselines/calibration)
+      const engine = new BiomechFlowEngine({
+        smoothing: true,
+        // baselines, calibration can be injected per athlete/sport later
+      });
+
+      // 3. Compute nodes
+      const nodes = engine.compute(metrics);
+
+      // 4. Respond with capsule payload
+      return res.status(200).json({
+        athleteId,
+        nodes,
+        hasData: true,
+      });
+    } catch (err) {
+      console.error("Error computing BiomechFlow capsules:", err);
+      return res.status(500).json({
+        error: "Failed to compute BiomechFlow capsules",
+      });
+    }
+  }
+);
+
+export default router;
+
+
+src/data/metric-repository.ts (simple example)
+
+`ts
+import { Metric } from "../ingestion/metric.types";
+
+// This is a placeholder; wire it to your real DB (Postgres, Mongo, Supabase, etc.)
+class MetricRepository {
+  async getRecentMetricsForAthlete(
+    athleteId: string,
+    opts: { hours: number }
+  ): Promise<Metric[]> {
+    // Example SQL-ish logic:
+    // SELECT * FROM metrics
+    // WHERE athlete_id = $1
+    //   AND timestamp >= NOW() - interval '${opts.hours} hours'
+    // ORDER BY timestamp DESC;
+
+    // For now, return an empty array or mock data.
+    return [];
+  }
+}
+
+export const metricRepository = new MetricRepository();
+`
+
+
+
+src/server.ts (wire the route)
+
+`ts
+import express from "express";
+import biomechflowCapsulesRoute from "./api/biomechflowCapsules.route";
+
+const app = express();
+app.use(express.json());
+
+app.use("/api", biomechflowCapsulesRoute);
+
+const PORT = process.env.PORT || 4000;
+app.listen(PORT, () => {
+  console.log(API running on http://localhost:${PORT});
+});
+`
+
+
+
+Frontend call → Capsules
+
+Your React app hits:
+
+`ts
+GET /api/athletes/{athleteId}/biomechflow/capsules
+`
+
+Response:
+
+`json
+{
+  "athleteId": "ath_123",
+  "nodes": {
+    "vital": 742,
+    "cognitive": 681,
+    "performance": 812,
+    "overall": 756
+  },
+  "hasData": true
+}
+`
+
+Then you render:
+
+`tsx
+<BiomechFlowCapsules nodes={data.nodes} />
+`
