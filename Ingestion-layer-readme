@@ -1,0 +1,124 @@
+Ingestion Layer README
+
+Unified Device → Metric Normalization System
+
+“One Contract. Any Device. Infinite Intelligence.”
+
+
+
+🔥 Overview
+
+The ingestion layer is the front door of the Athlete Performance Intelligence System.  
+Its job is simple:
+
+> Take any device’s raw data → convert it into one universal Metric[] format → feed BiomechFlow + dashboards + NIL engines.
+
+Apple Watch, WHOOP, Catapult, GPS trackers — everything collapses into the same internal shape.
+
+This guarantees:
+
+- Consistent analytics  
+- Predictable BiomechFlow node behavior  
+- Plug‑and‑play device support  
+- Zero downstream rewrites  
+
+
+
+🧠 Core Concepts
+
+1. Metric Contract (The Universal Shape)
+All devices normalize into the same structure:
+
+- source → where the data came from  
+- type → what the metric represents  
+- value → numeric reading  
+- unit → normalized unit  
+- timestamp → ISO  
+- meta → raw vendor details  
+
+This is the only shape the intelligence engine consumes.
+
+
+2. Device Adapters (The Plug‑In System)
+Each device vendor implements the same interface:
+
+- canHandle(input) → routing  
+- toMetrics(input) → normalization  
+
+Adapters live in:
+
+`
+/src/ingestion/adapters
+`
+
+Add a new device?  
+Just drop in a new adapter file — no other code changes required.
+
+
+3. Ingestion Router (The Dispatcher)
+The ingestion router selects the correct adapter and returns Metric[].
+
+`
+normalizeDevicePayload(input) → Metric[]
+`
+
+This is the single entry point for all device data.
+
+
+4. Device Profile (Auto‑Configuration Layer)
+Once metrics are ingested, the system builds a DeviceProfile:
+
+- Detects which devices are active  
+- Configures UI tiles  
+- Adjusts BiomechFlow weighting  
+- Enables/Disables readiness modules  
+
+
+
+📂 Folder Structure
+
+`
+/src
+  /ingestion
+    /adapters
+      apple-health.adapter.ts
+      whoop.adapter.ts
+      catapult.adapter.ts
+      gps.adapter.ts
+    metric.types.ts
+    device-adapter.interface.ts
+    ingestion.registry.ts
+    normalize-device-payload.ts
+    device-profile.ts
+`
+
+Each file has a single responsibility and is safe to extend without breaking the system.
+
+
+
+🚀 Data Flow
+
+`
+Device → Adapter → Metric[] → BiomechFlow → Dashboards → NIL Intelligence
+`
+
+Example: Apple Watch → Apple Health → Adapter → Metric[]
+
+- HealthKit samples come in  
+- AppleHealthAdapter maps them to Metric[]  
+- BiomechFlow consumes HR, HRV, VO₂max, Steps, Resp Rate  
+- Readiness + Fatigue + Load nodes update  
+- UI renders updated capsules + cards  
+
+
+
+🛠 Adding a New Device
+
+1. Create a new file in /adapters  
+2. Implement DeviceAdapter  
+3. Register it in ingestion.registry.ts  
+4. Done — the system now supports the new device  
+
+No schema changes.  
+No engine rewrites.  
+No UI rewrites.
