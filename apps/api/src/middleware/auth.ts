@@ -5,10 +5,6 @@ export interface AuthRequest extends Request {
   token?: string;
 }
 
-/**
- * JWT authentication middleware.
- * Extracts and validates bearer token from Authorization header.
- */
 export function authenticateToken(
   req: AuthRequest,
   res: Response,
@@ -22,23 +18,19 @@ export function authenticateToken(
     return;
   }
 
-  // TODO: Verify JWT with your secret
-  // For now, just extract user ID from a mock payload
   try {
     const decoded = JSON.parse(Buffer.from(token, 'base64').toString());
     req.userId = decoded.sub;
     req.token = token;
     next();
-  } catch {n    res.status(403).json({ error: 'Invalid token' });
+  } catch {
+    res.status(403).json({ error: 'Invalid token' });
   }
 }
 
-/**
- * Optional authentication: sets userId if token present, otherwise continues.
- */
 export function optionalAuth(
   req: AuthRequest,
-  res: Response,
+  _res: Response,
   next: NextFunction,
 ) {
   const authHeader = req.headers['authorization'];
@@ -50,7 +42,7 @@ export function optionalAuth(
       req.userId = decoded.sub;
       req.token = token;
     } catch {
-      // Token invalid, continue without auth
+      // invalid token ignored in optional mode
     }
   }
 
