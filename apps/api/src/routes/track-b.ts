@@ -18,7 +18,7 @@ router.get('/campaigns/:id/summary', (req, res) => {
         engagementVelocity: 1.1,
         spendShock: 0.3,
         athleteOutputShock: 0.2,
-      })
+      }),
     ),
     activeTranches: 3,
     capitalSecured: 265000,

@@ -1,64 +1,85 @@
+:root {
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  color: #ecf4ff;
+  background: #07131f;
+  line-height: 1.5;
+  font-weight: 400;
+}
+
 * {
   box-sizing: border-box;
 }
 
-:root {
-  color: #f5f5f5;
-  background: #070707;
-  font-family: Inter, system-ui, sans-serif;
-}
-
 body {
   margin: 0;
-  background: radial-gradient(circle at top, #121212 0%, #090909 100%);
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top, rgba(53, 121, 255, 0.28), transparent 30%),
+    linear-gradient(180deg, #07131f 0%, #0d1d2d 100%);
+}
+
+#root {
+  min-height: 100vh;
 }
 
 .shell {
-  max-width: 1200px;
+  max-width: 1100px;
   margin: 0 auto;
-  padding: 40px 24px;
+  padding: 32px 20px 60px;
 }
 
 .topbar {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  margin-bottom: 32px;
-  border-bottom: 1px solid #2d2d2d;
-  padding-bottom: 18px;
+  align-items: center;
+  margin-bottom: 28px;
 }
 
-h1, h2 {
+h1 {
   margin: 0;
-  color: #f7c75b;
+  font-size: clamp(2rem, 3vw, 3rem);
 }
 
 .badge {
-  background: #f7c75b;
-  color: #111;
+  border: 1px solid rgba(137, 191, 255, 0.4);
+  background: rgba(20, 49, 73, 0.7);
   border-radius: 999px;
   padding: 8px 12px;
-  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #9bd2ff;
 }
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 22px;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
 }
 
 .panel {
-  background: rgba(17, 17, 17, 0.9);
-  border: 1px solid #2d2d2d;
-  border-radius: 18px;
+  border: 1px solid rgba(132, 180, 255, 0.2);
+  border-radius: 20px;
+  background: rgba(7, 24, 38, 0.86);
   padding: 24px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
+}
+
+.panel h2 {
+  margin-top: 0;
+  margin-bottom: 16px;
+  font-size: 1.2rem;
 }
 
 .stat {
-  margin-top: 12px;
-  padding: 14px 16px;
-  background: #161616;
   border-radius: 12px;
-  border: 1px solid #2a2a2a;
+  padding: 12px 14px;
+  margin: 10px 0;
+  background: rgba(18, 38, 55, 0.9);
+  border: 1px solid rgba(133, 189, 255, 0.18);
+}
+
+p {
+  margin: 0;
+  color: #b7cfe9;
 }

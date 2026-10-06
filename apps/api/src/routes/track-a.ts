@@ -18,7 +18,7 @@ const athleteProfiles = {
     fatiguePenalty: 0.08,
     riskDiscount: 0.06,
     volatilityPenalty: 0.04,
-  }
+  },
 };
 
 const telemetry = {
@@ -30,7 +30,7 @@ const telemetry = {
     recovery: 81,
     engagementVelocity: 1.4,
     latency: 120,
-  }
+  },
 };
 
 router.get('/athletes/:id/divergence', (req, res) => {
@@ -43,30 +43,34 @@ router.get('/athletes/:id/divergence', (req, res) => {
   }
 
   const metrics = telemetry[athleteId as keyof typeof telemetry];
-  const modelNil = calculateModelNil({
-    baseValue: athlete.baseValue,
-    performance: athlete.performance,
-    sponsorshipFit: athlete.sponsorshipFit,
-    mediaVelocity: athlete.mediaVelocity,
-    socialDemand: athlete.socialDemand,
-    biometricStability: athlete.biometricStability,
-    fatiguePenalty: athlete.fatiguePenalty,
-    riskDiscount: athlete.riskDiscount,
-    volatilityPenalty: athlete.volatilityPenalty,
-  }, {
-    heartRateVariability: metrics?.heartRateVariability ?? 65,
-    readiness: metrics?.readiness ?? 70,
-    explosiveOutput: metrics?.explosiveOutput ?? 75,
-    fatigue: metrics?.fatigue ?? 35,
-    recovery: metrics?.recovery ?? 70,
-    engagementVelocity: metrics?.engagementVelocity ?? 1,
-    latency: metrics?.latency ?? 150,
-  }, {
-    followerGrowth: 0.14,
-    engagementRate: 0.19,
-    sponsorInterest: 0.72,
-    marketSentiment: 0.64,
-  });
+  const modelNil = calculateModelNil(
+    {
+      baseValue: athlete.baseValue,
+      performance: athlete.performance,
+      sponsorshipFit: athlete.sponsorshipFit,
+      mediaVelocity: athlete.mediaVelocity,
+      socialDemand: athlete.socialDemand,
+      biometricStability: athlete.biometricStability,
+      fatiguePenalty: athlete.fatiguePenalty,
+      riskDiscount: athlete.riskDiscount,
+      volatilityPenalty: athlete.volatilityPenalty,
+    },
+    {
+      heartRateVariability: metrics?.heartRateVariability ?? 65,
+      readiness: metrics?.readiness ?? 70,
+      explosiveOutput: metrics?.explosiveOutput ?? 75,
+      fatigue: metrics?.fatigue ?? 35,
+      recovery: metrics?.recovery ?? 70,
+      engagementVelocity: metrics?.engagementVelocity ?? 1,
+      latency: metrics?.latency ?? 150,
+    },
+    {
+      followerGrowth: 0.14,
+      engagementRate: 0.19,
+      sponsorInterest: 0.72,
+      marketSentiment: 0.64,
+    },
+  );
 
   const marketNil = calculateMarketNil(820, 2.5);
   const divergence = calculateDivergence(modelNil, marketNil);

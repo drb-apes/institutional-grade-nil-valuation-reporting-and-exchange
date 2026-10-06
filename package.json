@@ -1,1 +1,18 @@
-{"name":"institutional-grade-nil-valuation-reporting-and-exchange","private":false,"version":"0.1.0","workspaces":["apps/*","packages/*"],"scripts":{"dev":"npm run dev --workspace @ig-nil/api","build":"tsc -b packages/shared packages/engine apps/api apps/web","lint":"eslint . --ext .ts,.tsx","test":"vitest run"},"devDependencies":{"@types/express":"^5.0.0","@types/node":"^20.14.12","@types/react":"^18.3.12","@types/react-dom":"^18.3.1","eslint":"^9.10.0","tsx":"^4.19.2","tsup":"^8.1.6","typescript":"^5.6.3","vite":"^5.4.10","vitest":"^2.1.1"}}
+{
+  "name": "institutional-grade-nil-valuation-reporting-and-exchange",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "dev:api": "npm run dev --workspace @ig-nil/api",
+    "dev:web": "npm run dev --workspace @ig-nil/web",
+    "lint": "npm run lint --workspaces --if-present"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.4"
+  }
+}

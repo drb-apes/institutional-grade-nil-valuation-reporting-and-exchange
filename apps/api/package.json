@@ -9,13 +9,15 @@
     "start": "node dist/server.js"
   },
   "dependencies": {
+    "@ig-nil/shared": "workspace:*",
     "cors": "^2.8.5",
-    "express": "^4.21.2",
-    "@ig-nil/shared": "*",
-    "@ig-nil/engine": "*"
+    "express": "^4.19.2"
   },
   "devDependencies": {
     "@types/cors": "^2.8.5",
-    "@types/express": "^5.0.0"
+    "@types/express": "^5.0.0",
+    "@types/node": "^20.14.10",
+    "tsx": "^4.17.0",
+    "typescript": "^5.5.4"
   }
 }
