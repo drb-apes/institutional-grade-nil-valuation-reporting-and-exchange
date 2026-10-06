@@ -1,7 +1,8 @@
 node_modules
-.dist
-.vite
-dist
+.turbo
+.next
+out
 coverage
+dist
+*.log
 .DS_Store
-npm-debug.log*

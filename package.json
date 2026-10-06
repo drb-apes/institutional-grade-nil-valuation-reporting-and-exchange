@@ -1,18 +1,19 @@
 {
   "name": "institutional-grade-nil-valuation-reporting-and-exchange",
   "private": true,
-  "version": "0.1.0",
+  "packageManager": "pnpm@9.12.0",
   "workspaces": [
     "apps/*",
     "packages/*"
   ],
   "scripts": {
-    "build": "npm run build --workspaces --if-present",
-    "dev:api": "npm run dev --workspace @ig-nil/api",
-    "dev:web": "npm run dev --workspace @ig-nil/web",
-    "lint": "npm run lint --workspaces --if-present"
+    "dev": "turbo run dev --parallel",
+    "build": "turbo run build",
+    "typecheck": "turbo run typecheck",
+    "check": "pnpm run typecheck"
   },
   "devDependencies": {
-    "typescript": "^5.5.4"
+    "turbo": "^2.1.2",
+    "typescript": "^5.6.2"
   }
 }
