@@ -1,0 +1,19 @@
+{
+  "name": "institutional-grade-nil-valuation-reporting-and-exchange",
+  "private": true,
+  "packageManager": "pnpm@9.12.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "turbo run dev --parallel",
+    "build": "turbo run build",
+    "typecheck": "turbo run typecheck",
+    "check": "pnpm run typecheck"
+  },
+  "devDependencies": {
+    "turbo": "^2.1.2",
+    "typescript": "^5.6.2"
+  }
+}
