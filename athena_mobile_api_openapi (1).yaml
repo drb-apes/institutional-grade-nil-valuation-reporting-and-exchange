@@ -1,0 +1,402 @@
+openapi: 3.0.3
+info:
+  title: BIM-APES / BLEI-E Mobile & Terminal Gateway API (Production Release)
+  description: |
+    Production OpenAPI 3.0.3 specification for JPMorgan Athena & Goldman SecDB mobile application integrations.
+    Provides real-time 1,000 Hz edge telemetry WebSocket channels, Model-NIL vs Market-NIL spread execution,
+    Trade Confirmation Slips, 10% Parametric Margin Vault monitoring, Reg D 506(c) Accredited Investor Onboarding,
+    SHA-256 Biometric Privacy Toggles, Dual-Mode UI/UX configurations, and 60/20/10/10 automated revenue clearing.
+    
+    Protocol: BLEI-E / NIBLS Protocol v2026.4.1
+    Author / Lead Architect: Dashawn Ramel Bledsoe (NIBLS Inc.)
+  version: 2026.4.1
+  contact:
+    name: NIBLS Inc. Quantitative Engineering & Athena Gateway Team
+    url: https://nibls.com/athena-gateway
+servers:
+  - url: https://athena-gateway.jpmorgan.com/v1
+    description: JPMorgan Chase & Co. Production Athena FIX/REST Gateway
+  - url: https://secdb-gateway.gs.com/v1
+    description: Goldman Sachs SecDB Production Gateway
+  - url: https://sandbox.nibls.com/v1
+    description: BIM-APES Development Sandbox
+
+paths:
+  /auth/kyc-verify:
+    post:
+      summary: Reg D 506(c) Investor Accreditation & Onboarding Gate
+      description: Verifies accredited investor status (Net worth > $1M, Income > $200k/300k, or FINRA Series 7/65/82) and routes user to Derivative SCOC Mode or Non-Equity Fan Perks Mode.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KYCVerificationRequest'
+      responses:
+        '200':
+          description: Accreditation status verified and access route determined.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KYCVerificationResponse'
+
+  /privacy/telemetry-consent:
+    post:
+      summary: Biometric Privacy & HIPAA/GDPR De-Identification Toggle
+      description: Toggles SHA-256 edge de-identification and generates an anonymous hash salt to guarantee total biometric privacy prior to network transmission.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PrivacyConsentRequest'
+      responses:
+        '200':
+          description: Telemetry anonymization verified.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PrivacyConsentResponse'
+
+  /user/ui-mode:
+    post:
+      summary: Configure Dual-Mode UI/UX Layout (Pro Trader vs Consumer Fan Mode)
+      description: Switches UI terminology between Pro Trader Mode (Model-NIL, FIX Tags, SCOC Spreads) and Consumer Fan Mode (Biological Score, Power Rating, Insurance Shield).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UIModeConfigRequest'
+      responses:
+        '200':
+          description: UI mode updated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UIModeConfigResponse'
+
+  /market/spreads:
+    get:
+      summary: Retrieve Live Model-NIL vs Market-NIL Arbitrage Spreads
+      description: Returns real-time pricing spreads, biometric factor scores, and CRS risk states across active pipeline franchises (Kansas City Chiefs, Tennessee Titans, Cincinnati Bengals, New England Patriots).
+      parameters:
+        - name: team
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [CHIEFS, TITANS, BENGALS, PATRIOTS]
+      responses:
+        '200':
+          description: Active spread positions retrieved successfully.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SpreadItem'
+
+  /orders/option-buy:
+    post:
+      summary: Execute Fractional Call Option Purchase (Fan Micro-Tip Pooling)
+      description: Pools retail micro-tips ($2–$10) to acquire Fractional Call Options underwritten by the sponsor's Synthetically Collateralized Options Contract (SCOC).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OptionOrderRequest'
+      responses:
+        '201':
+          description: Fractional call option executed successfully. Issues instant Trade Confirmation Slip.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TradeConfirmationSlip'
+
+  /vault/margin-status:
+    get:
+      summary: Monitor 10% Parametric PFI Put Margin Vault & CRS-3 Circuit Breaker
+      description: Returns real-time margin vault balance, DMDC circuit breaker tripwire status, and yield-bearing treasury holdings.
+      parameters:
+        - name: campaign_id
+          in: query
+          required: true
+          schema:
+            type: string
+            example: "SCOC-KC-CHIEFS-2026-Q4"
+      responses:
+        '200':
+          description: Margin vault status retrieved.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MarginVaultStatus'
+
+  /clearing/settlement:
+    get:
+      summary: Retrieve Automated 60/20/10/10 Revenue Split & Sweat Dividend Alerts
+      description: Returns real-time pro-rata revenue distributions across Athlete Wallets (60%), Team Pools (20%), Exchange Reserves (10%), and Sponsor Liquidity Royalties (10%).
+      responses:
+        '200':
+          description: Clearing breakdown retrieved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClearingSplitResponse'
+
+  /portfolio/tax-accounting:
+    get:
+      summary: Retrieve Tax & Portfolio Accounting (1099-MISC / 1099-B)
+      description: Provides downloadable tax reporting, cumulative yield breakdowns, cost basis tracking, and T+0 transaction histories.
+      parameters:
+        - name: user_id
+          in: query
+          required: true
+          schema:
+            type: string
+            example: "USR-98421"
+      responses:
+        '200':
+          description: Tax accounting report generated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaxAccountingResponse'
+
+components:
+  schemas:
+    KYCVerificationRequest:
+      type: object
+      required:
+        - user_id
+        - net_worth_usd
+        - annual_income_usd
+      properties:
+        user_id:
+          type: string
+          example: "USR-98421"
+        net_worth_usd:
+          type: number
+          format: double
+          example: 1250000.00
+        annual_income_usd:
+          type: number
+          format: double
+          example: 280000.00
+        finra_license:
+          type: string
+          example: "SERIES_7"
+
+    KYCVerificationResponse:
+      type: object
+      properties:
+        user_id:
+          type: string
+          example: "USR-98421"
+        accredited_status:
+          type: boolean
+          example: true
+        trading_access_mode:
+          type: string
+          example: "FULL_DERIVATIVE_SCOC"
+          enum: [FULL_DERIVATIVE_SCOC, NON_EQUITY_PERKS_ONLY]
+
+    PrivacyConsentRequest:
+      type: object
+      required:
+        - user_id
+        - enable_sha256_anonymization
+      properties:
+        user_id:
+          type: string
+          example: "USR-98421"
+        enable_sha256_anonymization:
+          type: boolean
+          example: true
+
+    PrivacyConsentResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: "HIPAA_GDPR_COMPLIANT"
+        deidentified_hash_salt:
+          type: string
+          example: "SHA256_EDGE_SALT_ATH-KC-15-MAHOMES_1762558000000"
+
+    UIModeConfigRequest:
+      type: object
+      required:
+        - user_id
+        - ui_mode
+      properties:
+        user_id:
+          type: string
+          example: "USR-98421"
+        ui_mode:
+          type: string
+          example: "PRO_TRADER"
+          enum: [PRO_TRADER, FAN_CONSUMER]
+
+    UIModeConfigResponse:
+      type: object
+      properties:
+        user_id:
+          type: string
+          example: "USR-98421"
+        active_ui_mode:
+          type: string
+          example: "PRO_TRADER"
+
+    SpreadItem:
+      type: object
+      properties:
+        team_id:
+          type: string
+          example: "CHIEFS"
+        athlete_id:
+          type: string
+          example: "ATH-KC-15"
+        market_nil:
+          type: number
+          format: double
+          example: 40.00
+        model_nil:
+          type: number
+          format: double
+          example: 68.00
+        spread_discrepancy:
+          type: number
+          format: double
+          example: 28.00
+        pfi:
+          type: number
+          format: double
+          example: 0.22
+        eom:
+          type: number
+          format: double
+          example: 1.55
+        crs_state:
+          type: integer
+          example: 0
+          description: "0: Peak, 1: Baseline, 2: Discount, 3: Freeze"
+        ad_freeze_signal:
+          type: boolean
+          example: false
+
+    OptionOrderRequest:
+      type: object
+      required:
+        - user_id
+        - campaign_id
+        - tip_amount
+      properties:
+        user_id:
+          type: string
+          example: "USR-98421"
+        campaign_id:
+          type: string
+          example: "SCOC-KC-CHIEFS-2026-Q4"
+        tip_amount:
+          type: number
+          format: double
+          example: 10.00
+
+    TradeConfirmationSlip:
+      type: object
+      properties:
+        transaction_id:
+          type: string
+          example: "TX-BLEIE-883921"
+        instrument_acquired:
+          type: string
+          example: "BLEI-E Dec 24 $55 Call (Fractional Pool)"
+        strike_spread:
+          type: string
+          example: "Model-NIL: $68.00 | Market-NIL: $40.00"
+        sponsor_counterparty:
+          type: string
+          example: "Underwritten by Master Corporate Sponsor"
+        fan_equity_share:
+          type: string
+          example: "0.04% of Sprint Alpha Pool"
+        timestamp:
+          type: string
+          format: date-time
+          example: "2026-10-07T23:25:00Z"
+
+    MarginVaultStatus:
+      type: object
+      properties:
+        campaign_id:
+          type: string
+          example: "SCOC-KC-CHIEFS-2026-Q4"
+        master_placement_aum:
+          type: number
+          format: double
+          example: 500000.00
+        parametric_vault_balance_10:
+          type: number
+          format: double
+          example: 50000.00
+        vault_isolation_status:
+          type: string
+          example: "100% PROTECTED (Zero Fan Payout Drainage)"
+        dmdc_circuit_breaker_active:
+          type: boolean
+          example: false
+        hrv_zscore:
+          type: number
+          format: double
+          example: 1.20
+
+    ClearingSplitResponse:
+      type: object
+      properties:
+        gross_ad_surcharge_revenue:
+          type: number
+          format: double
+          example: 25000.00
+        athlete_wallet_60:
+          type: number
+          format: double
+          example: 15000.00
+        team_pool_20:
+          type: number
+          format: double
+          example: 5000.00
+        exchange_reserve_10:
+          type: number
+          format: double
+          example: 2500.00
+        sponsor_royalty_10:
+          type: number
+          format: double
+          example: 2500.00
+        sweat_dividend_alert:
+          type: string
+          example: "Target player hit 1.55 EOM spike. Net yield settled to terminal account balance."
+
+    TaxAccountingResponse:
+      type: object
+      properties:
+        user_id:
+          type: string
+          example: "USR-98421"
+        ytd_gross_yield_usd:
+          type: number
+          format: double
+          example: 14250.80
+        cost_basis_usd:
+          type: number
+          format: double
+          example: 5000.00
+        form_1099_misc_eligible:
+          type: boolean
+          example: true
+        statement_download_url:
+          type: string
+          example: "https://athena-gateway.jpmorgan.com/v1/docs/tax_1099_USR-98421.pdf"
