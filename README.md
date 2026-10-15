@@ -1,6 +1,6 @@
 # Institutional-Grade NIL Valuation, Reporting & Exchange
 
-This repository establishes the production monorepo foundation for the NIL valuation, reporting, and exchange platform. It includes a dashboard application, an API service, and shared package layers for the UI and domain types.
+This repository establishes the production monorepo foundation for the NIL valuation, reporting, and exchange platform. It includes a dashboard application, an API service, and shared package layer.
 
 ## Workspace layout
 
@@ -29,3 +29,9 @@ This repository establishes the production monorepo foundation for the NIL valua
 - `pnpm dev` — runs all workspace dev servers in parallel
 - `pnpm build` — builds all workspace packages and apps
 - `pnpm typecheck` — runs TypeScript checks across the monorepo
+
+## License
+
+No license.
+
+All rights reserved. No permission is granted to use, copy, modify, distribute, or create derivative works from this repository or its contents without prior written authorization from the rights holder.
