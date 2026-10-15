@@ -1,0 +1,63 @@
+version: '3.8'
+
+services:
+  frontend:
+    image: node:18-alpine
+    working_dir: /app/frontend
+    volumes:
+      - ./frontend:/app/frontend
+    ports:
+      - '3000:3000'
+    command: npm install && npm start
+    environment:
+      - REACT_APP_API_URL=http://localhost:3001
+      - REACT_APP_WS_URL=ws://localhost:3001
+
+  backend:
+    image: node:18-alpine
+    working_dir: /app/backend
+    volumes:
+      - ./backend:/app/backend
+    ports:
+      - '3001:3001'
+    command: npm install && npm run dev
+    environment:
+      - KAFKA_BROKERS=kafka:9092
+      - REDIS_URL=redis://redis:6379
+      - DATABASE_URL=postgresql://postgres:password@postgres:5432/blei_e
+    depends_on:
+      - kafka
+      - redis
+      - postgres
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    environment:
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    depends_on:
+      - zookeeper
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - '6379:6379'
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: blei_e
+      POSTGRES_PASSWORD: password
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
